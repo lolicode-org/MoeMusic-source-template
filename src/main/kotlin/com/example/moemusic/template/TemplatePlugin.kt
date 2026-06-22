@@ -31,7 +31,7 @@ object TemplatePlugin : Plugin {
     override val version: String = "1.0.0"
 
     /** Keep this range aligned with the MoeMusic API version your plugin was tested against. */
-    override val supportedApiVersions: String = ">=1.0.0 <2.0.0"
+    override val supportedApiVersions: String = ">=2.0.0 <3.0.0"
 
     override val configSpec: PluginConfigSpec<TemplateConfig> = pluginConfigSpec(::TemplateConfig) {
         boolean(

@@ -75,11 +75,11 @@ class TemplateMusicSourceTest {
                 id = "demo-track",
                 title = "Old title from queue",
                 artists = emptyList(),
-                durationMs = 1,
-                sourceId = TemplatePlugin.SOURCE_ID,
-            ),
+                durationMs = 1) {
+                    sourceId = TemplatePlugin.SOURCE_ID
+                },
             submitter = null,
-        )
+        ).playback
 
         assertEquals("https://cdn.example.invalid/audio/demo-track.mp3", playback.url)
     }
@@ -94,9 +94,9 @@ class TemplateMusicSourceTest {
                     id = "missing",
                     title = "Missing",
                     artists = emptyList(),
-                    durationMs = 1,
-                    sourceId = TemplatePlugin.SOURCE_ID,
-                ),
+                    durationMs = 1) {
+                        sourceId = TemplatePlugin.SOURCE_ID
+                    },
                 submitter = null,
             )
         }

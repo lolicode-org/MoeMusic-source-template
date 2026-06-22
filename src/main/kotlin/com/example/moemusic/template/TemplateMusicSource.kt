@@ -70,7 +70,7 @@ class TemplateMusicSource(initialConfig: TemplateConfig = TemplateConfig()) :
         return UserResult.Success(DEMO_TRACK.takeIf { it.id == trackId }?.toTrackInfo())
     }
 
-    override suspend fun resolve(track: TrackInfo, submitter: MoeMusicUser?): PlaybackResource {
+    override suspend fun resolve(track: TrackInfo, submitter: MoeMusicUser?): PlaybackResolution {
         val currentConfig = config
         if (!currentConfig.enabled) {
             throw TrackUnavailableException(disabledMessage())
@@ -83,7 +83,17 @@ class TemplateMusicSource(initialConfig: TemplateConfig = TemplateConfig()) :
         }
 
         // Resolve as late as possible. TrackInfo.id should be stable; playback URLs may expire.
-        return PlaybackResource(url = "${normalizedBaseUrl(currentConfig.mediaBaseUrl)}/${track.id}.mp3")
+        return PlaybackResolution(PlaybackResource(url = "${normalizedBaseUrl(currentConfig.mediaBaseUrl)}/${track.id}.mp3")) {
+                // If your source supplies additional metadata (e.g. lufs, lyric) while resolving, you can supply them with `ResolvedTrackPatch`
+                trackPatch = ResolvedTrackPatch {
+                    loudness = LoudnessInfo {
+                        integratedLufs = -11.68
+                        peak = PeakInfo(1.0) {
+                            kind = PeakKind.UNKNOWN
+                        }
+                    }
+                }
+            }
     }
 
     private fun normalizedBaseUrl(rawBaseUrl: String): String {
@@ -128,17 +138,17 @@ private data class TemplateTrack(
             id = id,
             title = title,
             artists = listOf(ArtistInfo.fromName(artist)),
-            durationMs = durationMs,
-            sourceId = TemplatePlugin.SOURCE_ID,
-        )
+            durationMs = durationMs) {
+                sourceId = TemplatePlugin.SOURCE_ID
+            }
 
     fun toSelectionEntry(): SelectionEntry =
         SelectionEntry(
             selectionId = id,
             title = title,
             artists = listOf(ArtistInfo.fromName(artist)),
-            durationMs = durationMs,
-            sourceId = TemplatePlugin.SOURCE_ID,
-            kind = SelectionEntryKind.TRACK,
-        )
+            durationMs = durationMs) {
+                sourceId = TemplatePlugin.SOURCE_ID
+                kind = SelectionEntryKind.TRACK
+            }
 }
