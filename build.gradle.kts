@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.4.10"
@@ -50,6 +51,10 @@ tasks.withType<JavaCompile>().configureEach {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_17
+        // Lock compilation baseline to Kotlin 2.2 to match the lowest guaranteed runtime
+        // across all supported host platforms (e.g. Minecraft Forge 1.20.1 KotlinForForge 4.12.0).
+        apiVersion = KotlinVersion.KOTLIN_2_2
+        languageVersion = KotlinVersion.KOTLIN_2_2
     }
 }
 
@@ -88,5 +93,8 @@ tasks.shadowJar {
     dependencies {
         exclude(dependency("org.jetbrains.kotlin:.*:.*"))
         exclude(dependency("org.jetbrains:annotations:.*"))
+        exclude(dependency("org.jetbrains.kotlinx:.*:.*"))
+        exclude(dependency("org.slf4j:.*:.*"))
+        exclude(dependency("org.lolicode.moemusic:.*:.*"))
     }
 }
