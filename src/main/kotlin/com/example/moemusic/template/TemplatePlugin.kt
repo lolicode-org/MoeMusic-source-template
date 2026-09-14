@@ -22,6 +22,12 @@ object TemplatePlugin : Plugin {
     /** Config IDs are filenames. Keep them lowercase and filesystem-safe. */
     const val CONFIG_ID = "example_template_source"
 
+    /**
+     * Minecraft Mod ID for Fabric, Forge, and NeoForge loaders.
+     * Must be lowercase alphanumeric with underscores (`^[a-z][a-z0-9_]{1,63}$`).
+     */
+    const val MOD_ID = "moemusic_example_template"
+
     /** Source IDs are global across built-in and plugin-provided music sources. Not required if your plugin is not a music source. */
     const val SOURCE_ID = "example:template"
 

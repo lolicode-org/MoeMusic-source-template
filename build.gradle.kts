@@ -15,6 +15,27 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
+        name = "Fabric"
+        url = uri("https://maven.fabricmc.net/")
+        content {
+            includeGroup("net.fabricmc")
+        }
+    }
+    maven {
+        name = "NeoForged"
+        url = uri("https://maven.neoforged.net/releases")
+        content {
+            includeGroup("net.neoforged.fancymodloader")
+        }
+    }
+    maven {
+        name = "MinecraftForge"
+        url = uri("https://maven.minecraftforge.net/")
+        content {
+            includeGroup("net.minecraftforge")
+        }
+    }
+    maven {
         name = "Lolicode Releases"
         url = uri("https://maven.lolicode.org/releases")
         content {
@@ -55,8 +76,30 @@ dependencies {
     // Do not shade these into standalone plugin jars.
     compileOnly("org.lolicode.moemusic:api:${providers.gradleProperty("plugin_api_version").get()}")
 
+    // Lightweight compileOnly loader APIs for multi-loader Minecraft mod bootstrap entrypoints.
+    // Transitive dependencies are strictly disabled to prevent leaking third-party libraries
+    // (e.g. Gson, Guava, ASM, Log4j) into the plugin compile classpath.
+    compileOnly("net.fabricmc:fabric-loader:${providers.gradleProperty("fabric_loader").get()}") {
+        isTransitive = false
+    }
+    compileOnly("net.neoforged.fancymodloader:loader:${providers.gradleProperty("neoforged_loader").get()}") {
+        isTransitive = false
+    }
+    compileOnly("net.minecraftforge:javafmllanguage:${providers.gradleProperty("forge_loader").get()}") {
+        isTransitive = false
+    }
+
     testImplementation(kotlin("test"))
     testImplementation("org.lolicode.moemusic:api:${providers.gradleProperty("plugin_api_version").get()}")
+    testImplementation("net.fabricmc:fabric-loader:${providers.gradleProperty("fabric_loader").get()}") {
+        isTransitive = false
+    }
+    testImplementation("net.neoforged.fancymodloader:loader:${providers.gradleProperty("neoforged_loader").get()}") {
+        isTransitive = false
+    }
+    testImplementation("net.minecraftforge:javafmllanguage:${providers.gradleProperty("forge_loader").get()}") {
+        isTransitive = false
+    }
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -86,6 +129,23 @@ idea {
     }
 }
 
+tasks.processResources {
+    val resourceProperties = mapOf(
+        "version" to project.version,
+        "mod_id" to providers.gradleProperty("mod_id").get(),
+        "mod_name" to providers.gradleProperty("mod_name").get(),
+        "mod_description" to providers.gradleProperty("mod_description").get(),
+        "mod_author" to providers.gradleProperty("mod_author").get(),
+        "mod_license" to providers.gradleProperty("mod_license").get(),
+        "fabric_entrypoint" to providers.gradleProperty("fabric_entrypoint").get(),
+        "moemusic_version" to providers.gradleProperty("moemusic_version").get()
+    )
+    inputs.properties(resourceProperties)
+    filesMatching(listOf("fabric.mod.json", "META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
+        expand(resourceProperties)
+    }
+}
+
 tasks.jar {
     inputs.property("projectName", project.name)
 
@@ -99,11 +159,12 @@ tasks.shadowJar {
 
     /*
      * Add third-party implementation dependencies above when your real plugin needs them.
-     * The shadow jar is the artifact users should put in config/moemusic/plugins/.
+     * The shadow jar is the universal artifact that users can install in either:
+     * - Minecraft `mods/` directory (loaded as Fabric, Forge, or NeoForge mod)
+     * - MoeMusic standalone plugin directory `config/moemusic/plugins/` (loaded via Java SPI)
      *
      * Host-provided dependencies such as MoeMusic API, Kotlin runtime, slf4j, and serialization
-     * stay outside this jar because the MoeMusic standalone plugin classloader delegates those
-     * packages to the parent runtime first.
+     * stay outside this jar because host platforms supply them at runtime.
      */
     dependencies {
         exclude(dependency("org.jetbrains.kotlin:.*:.*"))
@@ -111,5 +172,8 @@ tasks.shadowJar {
         exclude(dependency("org.jetbrains.kotlinx:.*:.*"))
         exclude(dependency("org.slf4j:.*:.*"))
         exclude(dependency("org.lolicode.moemusic:.*:.*"))
+        exclude(dependency("net.fabricmc:.*:.*"))
+        exclude(dependency("net.neoforged.fancymodloader:.*:.*"))
+        exclude(dependency("net.minecraftforge:.*:.*"))
     }
 }

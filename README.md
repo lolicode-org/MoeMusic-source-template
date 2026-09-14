@@ -1,26 +1,33 @@
-# MoeMusic Standalone Plugin Template
+# MoeMusic Plugin Template
 
 [简体中文](./README_zh.md) | English
 
-Minimal standalone plugin template for [MoeMusic](https://github.com/lolicode-org/MoeMusic).
+Minimal plugin template for [MoeMusic](https://github.com/lolicode-org/MoeMusic).
 
-This repository intentionally keeps the template small. For API behavior and contracts, use the MoeMusic API documentation.
+This repository keeps the template lightweight and independent of heavy Minecraft mod frameworks. The resulting single JAR works simultaneously as:
+- A **Minecraft Mod** for **Fabric**, **NeoForge**, and **Minecraft Forge** (installable directly into `.minecraft/mods/`).
+- A **Standalone Plugin** for any jvm platform that MoeMusic works on (loaded via Java SPI).
 
 ## Contents
 
-- `TemplatePlugin`: plugin identity, config spec, and source registration.
+- `TemplatePlugin`: plugin identity, config spec, mod ID, and source registration.
 - `TemplatePluginProvider`: Java SPI entry point for standalone JAR loading.
+- `platform/FabricEntrypoint`: Fabric / Quilt mod entrypoint.
+- `platform/NeoForgeEntrypoint`: NeoForge mod entrypoint.
+- `platform/ForgeEntrypoint`: Minecraft Forge mod entrypoint.
 - `TemplateConfig`: serializable TOML config model.
 - `TemplateMusicSource`: minimal searchable and identifier-resolvable source.
 - `assets/example/lang/`: bundled translations for the `example` plugin namespace.
+- Mod metadata descriptors: `fabric.mod.json`, `META-INF/neoforge.mods.toml`, `META-INF/mods.toml`.
 
 ## Rename Before Use
 
-1. Replace `com.example.moemusic.template` with your package.
-2. Change `PLUGIN_ID`, `CONFIG_ID`, and `SOURCE_ID` in `TemplatePlugin`.
-3. Move `assets/example/lang/` to the namespace used by your plugin ID.
-4. Update `META-INF/services/org.lolicode.moemusic.api.plugin.PluginProvider`.
-5. Replace the demo source logic with your real source implementation.
+1. Replace `com.example.moemusic.template` with your package across `src/`.
+2. Update IDs in `TemplatePlugin.kt` (`PLUGIN_ID`, `CONFIG_ID`, `MOD_ID`, `SOURCE_ID`).
+3. Update `gradle.properties` (`mod_id`, `mod_name`, `mod_description`, `mod_author`, `fabric_entrypoint`).
+4. Move `assets/example/lang/` to the namespace used by your plugin ID (`assets/<namespace>/lang/`).
+5. Update `META-INF/services/org.lolicode.moemusic.api.plugin.PluginProvider` with your provider class.
+6. Replace the demo source logic with your real source implementation.
 
 ## Build
 
@@ -28,11 +35,10 @@ This repository intentionally keeps the template small. For API behavior and con
 ./gradlew build
 ```
 
-Install the generated `build/libs/*-full.jar` into:
+The generated `build/libs/*-full.jar` is universal and can be installed into:
 
-```text
-config/moemusic/plugins/
-```
+- **Minecraft**: drop directly into `.minecraft/mods/` (works with Fabric, Forge, and NeoForge across all supported Minecraft versions).
+- **Standalone / Non-Minecraft**: drop into `config/moemusic/plugins/` (or server plugins folder).
 
 Restart the server or client after changing plugin JARs.
 
