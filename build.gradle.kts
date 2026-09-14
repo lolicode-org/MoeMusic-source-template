@@ -70,36 +70,33 @@ repositories {
     }
 }
 
+val platformSourceSet = sourceSets.create("platform") {
+    compileClasspath += sourceSets.named("main").get().output
+    runtimeClasspath += sourceSets.named("main").get().output
+}
+
 dependencies {
     // MoeMusic API transitively provides the guaranteed runtime baseline:
     // Kotlin stdlib, kotlinx-coroutines, kotlinx-serialization (core + json), and SLF4J API.
     // Do not shade these into standalone plugin jars.
     compileOnly("org.lolicode.moemusic:api:${providers.gradleProperty("plugin_api_version").get()}")
 
-    // Lightweight compileOnly loader APIs for multi-loader Minecraft mod bootstrap entrypoints.
-    // Transitive dependencies are strictly disabled to prevent leaking third-party libraries
-    // (e.g. Gson, Guava, ASM, Log4j) into the plugin compile classpath.
-    compileOnly("net.fabricmc:fabric-loader:${providers.gradleProperty("fabric_loader").get()}") {
+    // Platform sourceSet: contains modloader bootstrap entrypoints.
+    // Isolated so main plugin code cannot accidentally use loader classes or their dependencies.
+    "platformCompileOnly"(sourceSets["main"].output)
+    "platformCompileOnly"("org.lolicode.moemusic:api:${providers.gradleProperty("plugin_api_version").get()}")
+    "platformCompileOnly"("net.fabricmc:fabric-loader:${providers.gradleProperty("fabric_loader").get()}") {
         isTransitive = false
     }
-    compileOnly("net.neoforged.fancymodloader:loader:${providers.gradleProperty("neoforged_loader").get()}") {
+    "platformCompileOnly"("net.neoforged.fancymodloader:loader:${providers.gradleProperty("neoforged_loader").get()}") {
         isTransitive = false
     }
-    compileOnly("net.minecraftforge:javafmllanguage:${providers.gradleProperty("forge_loader").get()}") {
+    "platformCompileOnly"("net.minecraftforge:javafmllanguage:${providers.gradleProperty("forge_loader").get()}") {
         isTransitive = false
     }
 
     testImplementation(kotlin("test"))
     testImplementation("org.lolicode.moemusic:api:${providers.gradleProperty("plugin_api_version").get()}")
-    testImplementation("net.fabricmc:fabric-loader:${providers.gradleProperty("fabric_loader").get()}") {
-        isTransitive = false
-    }
-    testImplementation("net.neoforged.fancymodloader:loader:${providers.gradleProperty("neoforged_loader").get()}") {
-        isTransitive = false
-    }
-    testImplementation("net.minecraftforge:javafmllanguage:${providers.gradleProperty("forge_loader").get()}") {
-        isTransitive = false
-    }
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -129,7 +126,7 @@ idea {
     }
 }
 
-tasks.processResources {
+tasks.named<ProcessResources>("processPlatformResources") {
     val resourceProperties = mapOf(
         "version" to project.version,
         "mod_id" to providers.gradleProperty("mod_id").get(),
@@ -138,7 +135,7 @@ tasks.processResources {
         "mod_author" to providers.gradleProperty("mod_author").get(),
         "mod_license" to providers.gradleProperty("mod_license").get(),
         "fabric_entrypoint" to providers.gradleProperty("fabric_entrypoint").get(),
-        "moemusic_version" to providers.gradleProperty("moemusic_version").get()
+        "moemusic_version" to providers.gradleProperty("moemusic_version").get(),
     )
     inputs.properties(resourceProperties)
     filesMatching(listOf("fabric.mod.json", "META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
@@ -149,13 +146,21 @@ tasks.processResources {
 tasks.jar {
     inputs.property("projectName", project.name)
 
+    from(sourceSets["platform"].output)
+
     from("LICENSE") {
         rename { "${it}_${project.name}" }
     }
 }
 
+tasks.named<Jar>("sourcesJar") {
+    from(sourceSets["platform"].allSource)
+}
+
 tasks.shadowJar {
     archiveClassifier.set("full")
+
+    from(sourceSets["platform"].output)
 
     /*
      * Add third-party implementation dependencies above when your real plugin needs them.
